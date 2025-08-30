@@ -3,7 +3,9 @@ package br.com.org.geofinance.app.service;
 import br.com.org.geofinance.app.dto.request.WatchlistCreateRequest;
 import br.com.org.geofinance.app.dto.request.WatchlistUpdateRequest;
 import br.com.org.geofinance.app.dto.response.WatchlistItemResponse;
+import br.com.org.geofinance.domain.usecase.WatchUseCase;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import java.util.List;
@@ -11,37 +13,35 @@ import java.util.List;
 @ApplicationScoped
 public class WatchlistServiceImpl implements WatchlistService {
 
+    @Inject
+    WatchUseCase watchUseCase;
+
     @Override
     @Transactional
     public WatchlistItemResponse create(WatchlistCreateRequest request) {
-//        return createUseCase.execute(request);
-        return null;
+        return watchUseCase.create(request);
     }
 
     @Override
     public List<WatchlistItemResponse> list(int page, int size) {
-//        return listUseCase.execute(page, size);
-        return null;
+      return watchUseCase.list(page, size);
     }
 
     @Override
     public WatchlistItemResponse getById(Long id) {
-//        return getUseCase.execute(id);
-        return null;
+        return watchUseCase.getById(id);
     }
 
     @Override
     @Transactional
     public WatchlistItemResponse update(Long id, WatchlistUpdateRequest request) {
-//        return updateUseCase.execute(id, request);
-        return null;
+        return watchUseCase.update(id, request);
     }
 
     @Override
     @Transactional
     public void delete(Long id) {
-//        deleteUseCase.execute(id);
-        System.out.println("Teste DELETE");
+        watchUseCase.delete(id);
     }
 
 }
