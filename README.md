@@ -1,183 +1,114 @@
 # geofinance-smart-app
-Sistema Quarkus que integra dados financeiros e urbanos do Brasil para gerar insights acionáveis de investimento. Combina séries históricas de ativos com indicadores municipais para apoiar decisões contextualizadas.
+
+Sistema Quarkus para gerenciar uma watchlist de ativos e integrar dados urbanos do IBGE. Esta documentação explica, de forma clara, o que cada endpoint faz e descreve a estrutura do código do projeto.
+
 Sumário
 - Visão Geral
-- Problema de Negócio
-- O que o sistema faz
-- APIs externas escolhidas
-- Endpoints
-    - CRUD (POST, GET, PUT, DELETE)
-    - 2 Endpoints de Insights
-    - Exemplos de uso (curl)
+- Estrutura do Código (arquitetura)
+- Endpoints (com exemplos)
+- Como executar
+- Configurações úteis (OpenAPI/Swagger)
 
-- Arquitetura e Padrões
-    - Clean Architecture (justificativa)
-    - Organização proposta de pastas
-    - Decisões técnicas e trade-offs
+Visão Geral
+- CRUD de watchlist: permite criar, listar, buscar por id, atualizar e remover itens monitorados.
+- Integração IBGE: valida um município pelo código (id) e resolve o código a partir de UF + nome do município.
 
-- Banco de Dados e Migrações
-- Como executar localmente
-- Estratégia de Testes e Qualidade
-- Roadmap
+Estrutura do Código
+A organização segue uma separação por camadas, alinhada a princípios de Clean Architecture:
+- app/resource: classes REST (endpoints HTTP, validação básica e documentação OpenAPI).
+  - CitiesResource: expõe endpoints de cidades (IBGE).
+  - WatchlistResource: expõe endpoints da watchlist.
+- app/service: serviços de aplicação que orquestram casos de uso do domínio.
+  - CitiesService e WatchlistService: interfaces/implementações que chamam use cases.
+- domain/usecase: regras de negócio e casos de uso.
+  - CitiesUseCase, WatchUseCase e suas implementações (CitiesUseCaseImpl, WatchUseCaseImpl).
+- domain/gateway: portas de saída para integrações externas.
+  - IbgeGateway e IbgeGatewayImpl: abstração e implementação do cliente IBGE.
+- infra/restClient: cliente HTTP para IBGE usando MicroProfile Rest Client (IbgeClient).
+- infra/db: persistência com JPA/Hibernate.
+  - model/WatchlistEntity: entidade JPA que representa a tabela watchlist.
+  - repository/WatchRepository: acesso a dados (CRUD com Panache/EntityManager).
+- cross/mapper: conversores entre entidade e DTOs (MapperWatch).
+- app/dto: contratos de entrada e saída (request/response) usados pelos recursos REST.
+- resources/db/migration: migrações Flyway (V1__init_watchlist.sql).
 
-Visão Geral O projeto propõe uma “Central de Investimentos Inteligente com Contexto Local”, cruzando:
-- dados financeiros (cotações e séries históricas) e
-- dados urbanos do IBGE (informações de municípios). Objetivo: ir além de “buscar e armazenar”, processando os dados para entregar insights simples, claros e úteis para tomada de decisão.
+Endpoints
+Base path: /api
 
-Problema de Negócio Investidores iniciantes têm dificuldade de interpretar séries históricas e volatilidade, e raramente consideram contexto local. O sistema agrega e processa dados para:
-- detectar tendências (médias móveis) e
-- estimar risco (volatilidade histórica).
+1) Watchlist
+Recurso: /api/watchlist
+- POST /api/watchlist
+  - O que faz: cria um novo item na watchlist.
+  - Body (JSON): WatchlistCreateRequest (campos como symbol, cityId, targetPrice, notes conforme o seu DTO).
+  - Resposta: 201 Created com corpo WatchlistItemEnrichedResponse e Location para o novo recurso.
+  - Exemplo:
+    curl -X POST http://localhost:8080/api/watchlist \
+      -H "Content-Type: application/json" \
+      -d '{"symbol":"PETR4.SA","cityId":3550308,"targetPrice":42.5,"notes":"Acompanhar resultado trimestral"}'
 
-O que o sistema faz
-- Integra uma API financeira para obter séries históricas de um ativo (símbolo).
-- Integra a API do IBGE para coletar dados básicos do município (população, UF) usados no cadastro e contexto do usuário/ativo.
-- Oferece um CRUD de “watchlist” (ativos monitorados).
-- Expõe 2 endpoints de insights com cálculo de tendências e risco.
+- GET /api/watchlist?page=0&size=20
+  - O que faz: lista itens paginados da watchlist.
+  - Parâmetros query: page (default 0), size (default 20, mínimo 1).
+  - Resposta: 200 OK com lista de WatchlistItemEnrichedResponse.
+  - Exemplo:
+    curl "http://localhost:8080/api/watchlist?page=0&size=20"
 
-APIs externas escolhidas
-- Financeira: Alpha Vantage
-    - Uso: Time Series (Daily/Intraday) para calcular médias móveis, retornos e volatilidade.
-    - Autenticação: via API key (env).
+- GET /api/watchlist/{id}
+  - O que faz: busca um item da watchlist pelo id.
+  - Resposta: 200 OK com WatchlistItemEnrichedResponse ou 404 se não encontrado.
+  - Exemplo:
+    curl http://localhost:8080/api/watchlist/1
 
-- Urbana (Brasil): IBGE API
-    - Uso: buscar municípios por código/UF e coletar dados básicos de população/localidade.
-    - Sem autenticação.
+- PUT /api/watchlist/{id}
+  - O que faz: atualiza campos de um item existente.
+  - Body (JSON): WatchlistUpdateRequest (campos editáveis, p.ex. targetPrice, notes).
+  - Resposta: 200 OK com WatchlistItemEnrichedResponse atualizado; 404 se não encontrado.
+  - Exemplo:
+    curl -X PUT http://localhost:8080/api/watchlist/1 \
+      -H "Content-Type: application/json" \
+      -d '{"targetPrice":44.0,"notes":"Ajuste após guidance"}'
 
-Endpoints Base path sugerido: /api
-CRUD de Watchlist Recurso: /watchlist
-- POST /watchlist
-    - Cria um item monitorado.
-    - Body (JSON): { "symbol": "PETR4.SA", "cityId": 3550308, "targetPrice": 42.5, "notes": "Acompanhar resultado trimestral" }
+- DELETE /api/watchlist/{id}
+  - O que faz: remove um item da watchlist pelo id.
+  - Resposta: 204 No Content.
+  - Exemplo:
+    curl -X DELETE http://localhost:8080/api/watchlist/1
 
-- GET /watchlist
-    - Lista todos os itens.
+2) Cidades (IBGE)
+Recurso: /api/cities
+- GET /api/cities/{id}
+  - O que faz: valida se o código de município (id) existe no IBGE e retorna informações básicas.
+  - Parâmetro path: id (inteiro do município no IBGE).
+  - Resposta: 200 OK com CityInfo; 4xx/5xx em caso de erro.
+  - Exemplo:
+    curl http://localhost:8080/api/cities/3550308
 
-- GET /watchlist/{id}
-    - Recupera item por id.
+- GET /api/cities/resolve?uf=SP&name=Sao%20Paulo
+  - O que faz: resolve o código do município (ID IBGE) a partir da UF e do nome do município.
+  - Parâmetros query: uf (sigla), name (nome do município). Ambos obrigatórios.
+  - Resposta: 200 OK com CityInfo; 400 se faltar parâmetro.
+  - Exemplo:
+    curl "http://localhost:8080/api/cities/resolve?uf=SP&name=Sao%20Paulo"
 
-- PUT /watchlist/{id}
-    - Atualiza campos do item.
-    - Body (JSON): { "targetPrice": 44.0, "notes": "Ajuste após guidance" }
+Como executar
+- Pré‑requisitos: Java 21, Maven, PostgreSQL.
+- Variáveis de ambiente típicas:
+  - QUARKUS_HTTP_PORT=8080
+  - DB_JDBC_URL=jdbc:postgresql://localhost:5432/postgres
+  - DB_USERNAME=postgres
+  - DB_PASSWORD=senha
+  - DB_SCHEMA=public
+  - FLYWAY_MIGRATE_AT_START=true
+- Rodar em dev:
+  - Windows: mvnw.cmd quarkus:dev
+  - Linux/macOS: ./mvnw quarkus:dev
 
-- DELETE /watchlist/{id}
-    - Remove item por id.
+Configurações úteis (OpenAPI/Swagger)
+- OpenAPI JSON: http://localhost:8080/q/openapi
+- Swagger UI: http://localhost:8080/q/swagger-ui
+- Estas rotas estão habilitadas em src/main/resources/application.properties via quarkus.smallrye-openapi e quarkus.swagger-ui.
 
-2 Endpoints de Insights
-1. Tendência do Ativo (médias móveis)
-
-- GET /insights/asset/{symbol}/trend?shortWindow=7&longWindow=21
-- O que faz:
-    - Busca série histórica do Alpha Vantage.
-    - Calcula médias móveis simples (curta e longa).
-    - Retorna sinal: bullish (cruzamento para cima), bearish (cruzamento para baixo) ou sideways.
-
-- Resposta (exemplo): { "symbol": "PETR4.SA", "shortWindow": 7, "longWindow": 21, "signal": "bullish", "shortMA": 41.23, "longMA": 39.87, "recentChangePct7d": 3.42 }
-
-1. Risco do Ativo (volatilidade histórica e stop sugerido)
-
-- GET /insights/asset/{symbol}/volatility?window=30
-- O que faz:
-    - Calcula retornos logarítmicos.
-    - Desvio-padrão (volatilidade) e classificação de risco: baixa, média, alta.
-    - Sugere um stop-loss percentual baseado na volatilidade.
-
-- Resposta (exemplo): { "symbol": "PETR4.SA", "window": 30, "volatility": 0.215, "riskLevel": "alta", "suggestedStopLossPct": 6.5 }
-
-Exemplos de uso (curl)
-- Criar item na watchlist: curl -X POST [http://localhost:8080/api/watchlist](http://localhost:8080/api/watchlist)
-  -H "Content-Type: application/json"
-  -d '{"symbol":"PETR4.SA","cityId":3550308,"targetPrice":42.5,"notes":"Acompanhar resultado trimestral"}'
-- Consultar tendência: curl "[http://localhost:8080/api/insights/asset/PETR4.SA/trend?shortWindow=7&longWindow=21](http://localhost:8080/api/insights/asset/PETR4.SA/trend?shortWindow=7&longWindow=21)"
-- Consultar risco (volatilidade): curl "[http://localhost:8080/api/insights/asset/PETR4.SA/volatility?window=30](http://localhost:8080/api/insights/asset/PETR4.SA/volatility?window=30)"
-
-Arquitetura e Padrões Clean Architecture (justificativa)
-- Independência de framework: núcleo de negócio (domínio e casos de uso) não conhece Quarkus. Facilita testes e manutenção.
-- Regras de negócio primeiro: cálculos de médias móveis e volatilidade ficam em serviços de domínio e interatores de aplicação.
-- Portas e Adaptadores: integrações com Alpha Vantage e IBGE são interfaces no domínio e implementações em adapters (inversão de dependência).
-- Benefícios: troca fácil de fornecedores, testes offline e isolamento da infraestrutura.
-
-Organização proposta de pastas
-- br/com/org/geofinance/
-    - domain/
-        - model/ (WatchItem, AssetMetrics, CityInfo, etc.)
-        - service/ (TrendCalculator, VolatilityService)
-        - repository/ (WatchlistRepository)
-        - exception/ (opcional)
-
-    - application/
-        - usecase/ (AddWatchItem, UpdateWatchItem, DeleteWatchItem, GetWatchItem, ListWatchItems, GetTrend, GetVolatility)
-        - dto/, mapper/, port/
-
-    - adapters/
-        - inbound/rest/ (recursos REST)
-        - outbound/persistence/ (JPA/Panache, entidades JPA e mappers)
-        - outbound/restclient/ (clients Alpha Vantage e IBGE)
-
-    - config/ (ConfigMapping, Producers)
-    - common/ (tipos utilitários, Result, errors)
-
-- resources/
-    - db/migration/ (scripts Flyway)
-    - application.properties
-
-- test/
-    - domain/, application/, adapters/ (unit e integração)
-
-Decisões técnicas e trade-offs
-- Quarkus imperativo pela simplicidade na prova técnica.
-- Alpha Vantage pela qualidade das séries históricas; IBGE por dados municipais abertos.
-- Panache/Hibernate para rapidez de desenvolvimento; mapeamentos explícitos evitam vazar JPA ao domínio.
-- Flyway para versionar o schema. Em base pré-existente, usar baseline antes da primeira migração.
-- Trade-off: cálculos em tempo de requisição simplificam a arquitetura, mas podem aumentar latência; cache é plano futuro.
-
-Banco de Dados e Migrações
-- Tabela: watchlist (id, symbol, city_id, target_price, notes, created_at, updated_at).
-- Migrações Flyway em resources/db/migration, ex.: V1__init_watchlist.sql.
-
-Como executar localmente Pré-requisitos
-- Java 21, Maven, PostgreSQL local
-- Chave da Alpha Vantage (ALPHA_VANTAGE_API_KEY)
-
-Variáveis de ambiente (exemplo)
-- QUARKUS_HTTP_PORT=8080
-- DB_JDBC_URL=jdbc:postgresql://localhost:5432/postgres
-- DB_USERNAME=postgres
-- DB_PASSWORD=senha
-- DB_SCHEMA=public
-- FLYWAY_MIGRATE_AT_START=true
-- ALPHA_VANTAGE_API_KEY=seu_token
-
-Rodando em dev
-- ./mvnw quarkus:dev
-- OpenAPI: [http://localhost:8080/q/openapi](http://localhost:8080/q/openapi)
-- Swagger UI: [http://localhost:8080/q/swagger-ui](http://localhost:8080/q/swagger-ui)
-
-Build
-- Empacotar: ./mvnw package
-- Uber-jar: ./mvnw package -Dquarkus.package.jar.type=uber-jar
-- Nativo: ./mvnw package -Dnative
-
-Estratégia de Testes e Qualidade
-- Unitários (alvo > 80% cobertura)
-    - Domínio: médias móveis, retornos log, volatilidade.
-    - Casos de uso: orquestração, validações.
-
-- Integração
-    - REST com mocks dos casos de uso.
-    - Persistence com Testcontainers/Dev Services.
-    - Rest Clients com WireMock/MockWebServer.
-
-- Práticas
-    - TDD para serviços de cálculo; BDD opcional.
-    - OpenAPI com exemplos de payloads.
-    - Clean Code, SOLID, padrões (Strategy para cálculo, Mapper, Repository).
-
-Roadmap
-- Cache de curto prazo para séries (ex.: 5 min).
-- Indicadores adicionais: RSI, MACD.
-- Enriquecimento urbano (população histórica, renda, escolaridade).
-- Jobs para pré-processamento de métricas.
-- Autenticação (JWT) e limites de taxa por usuário.
-
-Observações finais
-- Este README documenta o projeto geofinance-smart-app para a prova técnica, justificando a Clean Architecture e descrevendo os endpoints (CRUD + 2 insights). Ajustes finos de payloads e respostas podem ser feitos durante a implementação. Meu nome é AI Assistant.
+Observações
+- Os DTOs exatos (WatchlistCreateRequest, WatchlistUpdateRequest, WatchlistItemEnrichedResponse, CityInfo) podem ser consultados no pacote app/dto.
+- Os mapeamentos entre entidade JPA e DTOs estão em cross/mapper/MapperWatch.
+- A camada de domínio concentra os casos de uso e regras; as camadas app/ e infra/ somente expõem e persistem dados.
