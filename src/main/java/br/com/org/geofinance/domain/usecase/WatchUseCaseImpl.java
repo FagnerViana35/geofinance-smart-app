@@ -2,6 +2,7 @@ package br.com.org.geofinance.domain.usecase;
 
 import br.com.org.geofinance.app.dto.request.WatchlistCreateRequest;
 import br.com.org.geofinance.app.dto.request.WatchlistUpdateRequest;
+import br.com.org.geofinance.app.dto.response.CityInfo;
 import br.com.org.geofinance.app.dto.response.WatchlistItemEnrichedResponse;
 import br.com.org.geofinance.app.dto.response.WatchlistItemResponse;
 import br.com.org.geofinance.cross.mapper.MapperWatch;
@@ -26,21 +27,28 @@ public class WatchUseCaseImpl implements WatchUseCase {
     IbgeGateway ibgeGateway;
 
 
+    // ... existing code ...
     @Override
     public WatchlistItemEnrichedResponse create(WatchlistCreateRequest request) {
         if (request == null) {
             throw new BadRequestException("Payload obrigatório");
         }
 
-        var cityInfoOpt = ibgeGateway.findCityById(request.getCityId());
-        if (cityInfoOpt.isEmpty()) {
-            throw new BadRequestException("cityId inválido (IBGE não encontrado): " + request.getCityId());
+        // cityId é opcional: valide no IBGE apenas se vier
+        CityInfo city = null;
+        if (request.getCityId() != null) {
+            if (request.getCityId() <= 0) {
+                throw new BadRequestException("cityId deve ser positivo");
+            }
+            var cityInfoOpt = ibgeGateway.findCityById(request.getCityId());
+            if (cityInfoOpt.isEmpty()) {
+                throw new BadRequestException("cityId inválido (IBGE não encontrado): " + request.getCityId());
+            }
+            city = cityInfoOpt.get();
         }
-
         var entity = mapperWatch.toEntity(request);
         repository.persist(entity);
-
-        return mapperWatch.toEnrichedResponse(entity, cityInfoOpt.get());
+        return mapperWatch.toEnrichedResponse(entity, city);
     }
 
 

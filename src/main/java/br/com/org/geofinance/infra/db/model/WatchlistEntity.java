@@ -25,7 +25,7 @@ public class WatchlistEntity {
     private String symbol;
 
     // IBGE city id
-    @Column(name = "city_id", nullable = false)
+    @Column(name = "city_id", nullable = true)
     private Integer cityId;
 
     @Column(name = "target_price", nullable = false, precision = 19, scale = 2)

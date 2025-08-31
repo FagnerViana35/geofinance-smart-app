@@ -17,7 +17,6 @@ public class WatchlistCreateRequest {
     @NotBlank(message = "symbol é obrigatório")
     private String symbol;
 
-    @NotNull(message = "cityId é obrigatório")
     @Positive(message = "cityId deve ser positivo")
     private Integer cityId;
 

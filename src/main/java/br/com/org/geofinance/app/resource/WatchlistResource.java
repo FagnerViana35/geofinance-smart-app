@@ -37,7 +37,7 @@ public class WatchlistResource {
 
     @POST
     @Transactional
-    @Operation(summary = "Cria um item na watchlist")
+    @Operation(summary = "Cria um item na watchlist - DADOS DE INVESTIMENTO DE ONDE TEM INVESTIMENTOS")
     @APIResponse(responseCode = "201", description = "Criado",
             content = @Content(schema = @Schema(implementation = WatchlistItemEnrichedResponse.class)))
     public Response create(@Valid WatchlistCreateRequest request, @Context UriInfo uriInfo) {
@@ -47,7 +47,7 @@ public class WatchlistResource {
     }
 
     @GET
-    @Operation(summary = "Lista itens da watchlist")
+    @Operation(summary = "Lista itens da watchlist - LISTA TODOS OS INVESTIMENTOS EXISTENTES")
     @APIResponse(responseCode = "200", description = "OK")
     public List<WatchlistItemEnrichedResponse> list(
             @QueryParam("page") @DefaultValue("0") @Min(0) int page,
@@ -57,7 +57,7 @@ public class WatchlistResource {
 
     @GET
     @Path("{id}")
-    @Operation(summary = "Busca item da watchlist por id")
+    @Operation(summary = "Busca item da watchlist por id - BUSCA INVESTIMENTOS POR ID do INVESTIMENTO")
     @APIResponse(responseCode = "200", description = "OK",
             content = @Content(schema = @Schema(implementation = WatchlistItemEnrichedResponse.class)))
     @APIResponse(responseCode = "404", description = "Não encontrado")
@@ -68,7 +68,7 @@ public class WatchlistResource {
     @PUT
     @Path("{id}")
     @Transactional
-    @Operation(summary = "Atualiza um item da watchlist")
+    @Operation(summary = "Atualiza um item da watchlist - ATUALIZA UM INVESTIMENTO - Atualiza o targetprice(preço alvo)")
     @APIResponse(responseCode = "200", description = "Atualizado",
             content = @Content(schema = @Schema(implementation = WatchlistItemEnrichedResponse.class)))
     @APIResponse(responseCode = "404", description = "Não encontrado")
@@ -79,7 +79,7 @@ public class WatchlistResource {
     @DELETE
     @Path("{id}")
     @Transactional
-    @Operation(summary = "Remove um item da watchlist")
+    @Operation(summary = "Remove um item da watchlist - REMOVE UM INVESTIMENTO DA LISTA DE INVESTIMENTO")
     @APIResponse(responseCode = "204", description = "Removido")
     public Response delete(@PathParam("id") Long id) {
         watchlistService.delete(id);

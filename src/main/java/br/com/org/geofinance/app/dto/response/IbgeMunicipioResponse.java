@@ -1,16 +1,20 @@
 package br.com.org.geofinance.app.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class IbgeMunicipioResponse {
 
     private int id;
     private String nome;
     private Microrregiao microrregiao;
-
-    public int getId() { return id; }
-    public String getNome() { return nome; }
-    public Microrregiao getMicrorregiao() { return microrregiao; }
 
     public static class Microrregiao {
         private Mesorregiao mesorregiao;

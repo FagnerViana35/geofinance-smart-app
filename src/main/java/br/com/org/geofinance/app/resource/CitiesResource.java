@@ -22,14 +22,14 @@ public class CitiesResource {
 
     @GET
     @Path("/{id}")
-    @Operation(summary = "Valida cityId no IBGE")
+    @Operation(summary = "Validar a CIDADE e ESTADO com o cityId (ID da CIDADE) no IBGE")
     public CityInfo getById(@PathParam("id") int id) {
         return citiesService.validateById(id);
     }
 
     @GET
     @Path("/resolve")
-    @Operation(summary = "Resolve cityId por UF + nome do município")
+    @Operation(summary = "BUSCAR cityId por UF + nome do município (CIDADE)")
     public CityInfo resolve(@QueryParam("uf") String uf, @QueryParam("name") String name) {
         if (uf == null || uf.isBlank() || name == null || name.isBlank()) {
             throw new BadRequestException("Parâmetros uf e name são obrigatórios");
