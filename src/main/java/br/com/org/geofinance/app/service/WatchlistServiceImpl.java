@@ -2,7 +2,7 @@ package br.com.org.geofinance.app.service;
 
 import br.com.org.geofinance.app.dto.request.WatchlistCreateRequest;
 import br.com.org.geofinance.app.dto.request.WatchlistUpdateRequest;
-import br.com.org.geofinance.app.dto.response.WatchlistItemResponse;
+import br.com.org.geofinance.app.dto.response.WatchlistItemEnrichedResponse;
 import br.com.org.geofinance.domain.usecase.WatchUseCase;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -18,23 +18,23 @@ public class WatchlistServiceImpl implements WatchlistService {
 
     @Override
     @Transactional
-    public WatchlistItemResponse create(WatchlistCreateRequest request) {
+    public WatchlistItemEnrichedResponse create(WatchlistCreateRequest request) {
         return watchUseCase.create(request);
     }
 
     @Override
-    public List<WatchlistItemResponse> list(int page, int size) {
+    public List<WatchlistItemEnrichedResponse> list(int page, int size) {
       return watchUseCase.list(page, size);
     }
 
     @Override
-    public WatchlistItemResponse getById(Long id) {
+    public WatchlistItemEnrichedResponse getById(Long id) {
         return watchUseCase.getById(id);
     }
 
     @Override
     @Transactional
-    public WatchlistItemResponse update(Long id, WatchlistUpdateRequest request) {
+    public WatchlistItemEnrichedResponse update(Long id, WatchlistUpdateRequest request) {
         return watchUseCase.update(id, request);
     }
 

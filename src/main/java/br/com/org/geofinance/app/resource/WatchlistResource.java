@@ -2,6 +2,7 @@ package br.com.org.geofinance.app.resource;
 
 import br.com.org.geofinance.app.dto.request.WatchlistCreateRequest;
 import br.com.org.geofinance.app.dto.request.WatchlistUpdateRequest;
+import br.com.org.geofinance.app.dto.response.WatchlistItemEnrichedResponse;
 import br.com.org.geofinance.app.dto.response.WatchlistItemResponse;
 import br.com.org.geofinance.app.service.WatchlistService;
 import io.smallrye.common.annotation.RunOnVirtualThread;
@@ -38,9 +39,9 @@ public class WatchlistResource {
     @Transactional
     @Operation(summary = "Cria um item na watchlist")
     @APIResponse(responseCode = "201", description = "Criado",
-            content = @Content(schema = @Schema(implementation = WatchlistItemResponse.class)))
+            content = @Content(schema = @Schema(implementation = WatchlistItemEnrichedResponse.class)))
     public Response create(@Valid WatchlistCreateRequest request, @Context UriInfo uriInfo) {
-        WatchlistItemResponse created = watchlistService.create(request);
+        WatchlistItemEnrichedResponse created = watchlistService.create(request);
         URI location = uriInfo.getAbsolutePathBuilder().path(String.valueOf(created.getId())).build();
         return Response.created(location).entity(created).build();
     }
@@ -48,7 +49,7 @@ public class WatchlistResource {
     @GET
     @Operation(summary = "Lista itens da watchlist")
     @APIResponse(responseCode = "200", description = "OK")
-    public List<WatchlistItemResponse> list(
+    public List<WatchlistItemEnrichedResponse> list(
             @QueryParam("page") @DefaultValue("0") @Min(0) int page,
             @QueryParam("size") @DefaultValue("20") @Min(1) int size) {
         return watchlistService.list(page, size);
@@ -58,9 +59,9 @@ public class WatchlistResource {
     @Path("{id}")
     @Operation(summary = "Busca item da watchlist por id")
     @APIResponse(responseCode = "200", description = "OK",
-            content = @Content(schema = @Schema(implementation = WatchlistItemResponse.class)))
+            content = @Content(schema = @Schema(implementation = WatchlistItemEnrichedResponse.class)))
     @APIResponse(responseCode = "404", description = "Não encontrado")
-    public WatchlistItemResponse getById(@PathParam("id") @Parameter(description = "Identificador do item") Long id) {
+    public WatchlistItemEnrichedResponse getById(@PathParam("id") @Parameter(description = "Identificador do item") Long id) {
         return watchlistService.getById(id);
     }
 
@@ -69,9 +70,9 @@ public class WatchlistResource {
     @Transactional
     @Operation(summary = "Atualiza um item da watchlist")
     @APIResponse(responseCode = "200", description = "Atualizado",
-            content = @Content(schema = @Schema(implementation = WatchlistItemResponse.class)))
+            content = @Content(schema = @Schema(implementation = WatchlistItemEnrichedResponse.class)))
     @APIResponse(responseCode = "404", description = "Não encontrado")
-    public WatchlistItemResponse update(@PathParam("id") Long id, @Valid WatchlistUpdateRequest request) {
+    public WatchlistItemEnrichedResponse update(@PathParam("id") Long id, @Valid WatchlistUpdateRequest request) {
         return watchlistService.update(id, request);
     }
 
