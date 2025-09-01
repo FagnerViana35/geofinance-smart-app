@@ -86,4 +86,20 @@ public class WatchlistResource {
         return Response.noContent().build();
     }
 
+    @GET
+    @Path("/sum/targetprice")
+    @Operation(summary = "Soma do targetPrice de todos os investimentos")
+    @APIResponse(responseCode = "200", description = "OK")
+    public java.math.BigDecimal sumAllTargetPrice() {
+        return watchlistService.sumAllTargetPrice();
+    }
+
+    @GET
+    @Path("/sum/targetprice/by-city")
+    @Operation(summary = "Soma do targetPrice dos investimentos imobiliários filtrando por cidade")
+    @APIResponse(responseCode = "200", description = "OK")
+    public java.math.BigDecimal sumTargetPriceByCity(@QueryParam("cityId") Integer cityId) {
+        return watchlistService.sumTargetPriceByCity(cityId);
+    }
+
 }

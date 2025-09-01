@@ -14,4 +14,7 @@ public interface WatchlistService {
     WatchlistItemEnrichedResponse update(Long id, WatchlistUpdateRequest request);
     void delete(Long id);
 
+    java.math.BigDecimal sumAllTargetPrice();
+    java.math.BigDecimal sumTargetPriceByCity(Integer cityId);
 }
+

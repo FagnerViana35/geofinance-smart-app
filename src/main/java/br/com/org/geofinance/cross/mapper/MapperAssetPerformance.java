@@ -16,7 +16,8 @@ public class MapperAssetPerformance {
         // na resposta do brapi.list(), então mantemos como null para possível enriquecimento futuro.
         return AssetPerformance.builder()
                 .symbol(it.getStock())
-                .changePct(it.getChange())
+                .changePct(it.getChangeValue())
+                .changePercent(it.getChangePercent())
                 .close(it.getClose())
                 .sector(it.getSector())
                 .name(it.getName())

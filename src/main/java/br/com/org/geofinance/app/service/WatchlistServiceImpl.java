@@ -44,4 +44,17 @@ public class WatchlistServiceImpl implements WatchlistService {
         watchUseCase.delete(id);
     }
 
+    @jakarta.inject.Inject
+    br.com.org.geofinance.infra.db.repository.WatchRepository watchRepository;
+
+    @Override
+    public java.math.BigDecimal sumAllTargetPrice() {
+        return watchRepository.sumAllTargetPrice();
+    }
+
+    @Override
+    public java.math.BigDecimal sumTargetPriceByCity(Integer cityId) {
+        return watchRepository.sumTargetPriceByCity(cityId);
+    }
+
 }

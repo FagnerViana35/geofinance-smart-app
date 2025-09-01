@@ -13,13 +13,34 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class BrapiQuoteItem {
     // ticker (ex.: PETR4, VALE3)
-    private String stock;
-    // nome da companhia/fundo/etf
-    private String name;
-    // Campos comuns úteis (presentes em muitas respostas do brapi)
-    private Double close;     // último preço de fechamento
-    private Double change;    // variação %
-    private String sector;    // setor (quando disponível)
-    private String segment;   // segmento (quando disponível)
-
+    private String stock; // symbol
+    // nome curto da companhia/fundo/etf
+    private String name; // shortName
+    // nome completo
+    private String longName; // longName
+    // moeda de negociação (ex.: BRL, USD)
+    private String currency; // currency
+    // último preço de negociação
+    private Double close; // regularMarketPrice
+    // preço máximo do dia
+    private Double high; // regularMarketDayHigh
+    // preço mínimo do dia
+    private Double low; // regularMarketDayLow
+    // variação em valor absoluto
+    private Double changeValue; // regularMarketChange
+    // variação percentual
+    private Double changePercent; // regularMarketChangePercent
+    // horário da última atualização
+    private String marketTime; // regularMarketTime
+    // valor de mercado (market cap)
+    private Long marketCap; // marketCap
+    // volume de negociações
+    private Long volume; // regularMarketVolume
+    // setor (quando disponível em outra resposta do brapi)
+    private String sector;
+    // segmento (quando disponível em outra resposta do brapi)
+    private String segment;
+    // URL do logo
+    private String logoUrl; // logourl
 }
+

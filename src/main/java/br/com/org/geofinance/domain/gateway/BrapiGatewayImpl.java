@@ -2,22 +2,29 @@ package br.com.org.geofinance.domain.gateway;
 
 import br.com.org.geofinance.app.dto.response.BrapiQuoteItem;
 import br.com.org.geofinance.app.dto.response.BrapiQuoteListResponse;
+import br.com.org.geofinance.app.dto.response.HistoricalPriceResponse;
 import br.com.org.geofinance.infra.restClient.BrapiClient;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+@Log4j2
 @ApplicationScoped
-
 public class BrapiGatewayImpl implements BrapiGateway {
 
     @Inject
     @RestClient
     BrapiClient client;
+
+    final private String TOKEN_MANAGER = "ct1zSVoMGQHjQxwKj5z6yH";
 
     @Override
     public List<BrapiQuoteItem> search(String query, int limit) {
@@ -25,7 +32,7 @@ public class BrapiGatewayImpl implements BrapiGateway {
             return Collections.emptyList();
         }
         try {
-            BrapiQuoteListResponse res = client.search(query.trim(), Math.max(1, limit));
+            BrapiQuoteListResponse res = client.search(query.trim(), Math.max(1, limit), TOKEN_MANAGER);
             return map(res);
         } catch (Exception e) {
             // Em produção: logar, métricas e possivelmente retry/backoff
@@ -41,7 +48,7 @@ public class BrapiGatewayImpl implements BrapiGateway {
         String so = (sortOrder == null || sortOrder.isBlank()) ? "desc" : sortOrder;
 
         try {
-            BrapiQuoteListResponse res = client.list(p, l, sb, so);
+            BrapiQuoteListResponse res = client.list(p, l, sb, so, TOKEN_MANAGER);
             return map(res);
         } catch (Exception e) {
             return Collections.emptyList();

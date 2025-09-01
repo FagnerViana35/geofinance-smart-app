@@ -17,6 +17,7 @@ public class AssetPerformance {
     private  Double priceReturnPct;
     private  Double dividendsPct;
     private  Double totalReturnPct;
+    private  Double changePercent;
     private  Double changePct;
     private  Double volatility;
     private  Double score;

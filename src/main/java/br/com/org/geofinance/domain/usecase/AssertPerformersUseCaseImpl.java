@@ -6,13 +6,29 @@ import br.com.org.geofinance.cross.mapper.MapperAssetPerformance;
 import br.com.org.geofinance.domain.gateway.BrapiGateway;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import lombok.extern.log4j.Log4j2;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+//Rranquear os ativos (ações, fundos, etc.)
+//que tiveram melhor desempenho em determinado período.
+//Buscar cotações de ativos financeiros.
+//Filtrar e selecionar ativos de interesse.
+//Calcular e ordenar o desempenho dos ativos.
+//Retornar os ativos mais rentáveis em um ranking.
+//List<String> symbols: Lista de códigos dos ativos que você quer analisar. Se for nula ou vazia, o método busca um conjunto padrão de ativos.
 
+//String period: Período de análise do desempenho dos ativos (ex: "1m", "6m", "1y"). No código atual, esse parâmetro ainda não é utilizado.
+
+//int size: Quantidade de ativos que você quer no ranking final (top N). O método garante que pelo menos 1 ativo será retornado.
+
+//boolean riskAdjusted: Indica se o ranking deve considerar ajuste por risco (ex: Sharpe Ratio). No código atual, esse parâmetro ainda não é utilizado.
+
+//boolean includeDividends: Indica se deve considerar dividendos no cálculo do desempenho. No código atual, esse parâmetro ainda não é utilizado.
+@Log4j2
 @ApplicationScoped
 public class AssertPerformersUseCaseImpl implements AssertPerformersUseCase{
 
@@ -64,7 +80,7 @@ public class AssertPerformersUseCaseImpl implements AssertPerformersUseCase{
     }
 
     private List<BrapiQuoteItem> safeList(List<BrapiQuoteItem> l) {
-        return (l == null) ? Collections.emptyList() : l;
+        return (l == null) ? Collections.emptyList() : l; 
     }
 
     private double nullableToZero(Double v) {

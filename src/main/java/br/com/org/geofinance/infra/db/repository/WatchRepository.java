@@ -50,4 +50,19 @@ public class WatchRepository implements PanacheRepository<WatchlistEntity> {
         long rows = delete("id = :id", Parameters.with("id", id));
         return rows > 0;
     }
+    public java.math.BigDecimal sumAllTargetPrice() {
+        var result = getEntityManager()
+                .createQuery("select coalesce(sum(w.targetPrice),0) from WatchlistEntity w", java.math.BigDecimal.class)
+                .getSingleResult();
+        return result == null ? java.math.BigDecimal.ZERO : result;
+    }
+
+    public java.math.BigDecimal sumTargetPriceByCity(Integer cityId) {
+        if (cityId == null) return java.math.BigDecimal.ZERO;
+        var result = getEntityManager()
+                .createQuery("select coalesce(sum(w.targetPrice),0) from WatchlistEntity w where w.cityId = :cityId", java.math.BigDecimal.class)
+                .setParameter("cityId", cityId)
+                .getSingleResult();
+        return result == null ? java.math.BigDecimal.ZERO : result;
+    }
 }
