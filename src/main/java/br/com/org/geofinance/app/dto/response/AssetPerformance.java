@@ -21,4 +21,7 @@ public class AssetPerformance {
     private  Double volatility;
     private  Double score;
     private  Integer dataPoints;
+    private  Double  close;
+    private  String sector;
+    private String name;
 }

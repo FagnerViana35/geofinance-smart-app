@@ -24,7 +24,7 @@ public class AssetAnalyticsResource {
 
     @GET
     @Path("/top-performers")
-    @Operation(summary = "Busca símbolos - STOCK - por nome/ticker no brapi.dev")
+    @Operation(summary = "Rankeia Investimentos que rende mais")
     public List<AssetPerformance> top(
             @QueryParam("period") @DefaultValue("30d") String period,
             @QueryParam("size") @DefaultValue("10") int size,

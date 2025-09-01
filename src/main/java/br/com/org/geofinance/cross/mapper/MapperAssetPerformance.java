@@ -17,6 +17,9 @@ public class MapperAssetPerformance {
         return AssetPerformance.builder()
                 .symbol(it.getStock())
                 .changePct(it.getChange())
+                .close(it.getClose())
+                .sector(it.getSector())
+                .name(it.getName())
                 .build();
     }
 
