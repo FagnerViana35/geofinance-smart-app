@@ -1,87 +1,114 @@
 # geofinance-smart-app
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+Sistema Quarkus para gerenciar uma watchlist de ativos e integrar dados urbanos do IBGE. Esta documentação explica, de forma clara, o que cada endpoint faz e descreve a estrutura do código do projeto.
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+Sumário
+- Visão Geral
+- Estrutura do Código (arquitetura)
+- Endpoints (com exemplos)
+- Como executar
+- Configurações úteis (OpenAPI/Swagger)
 
-## Running the application in dev mode
+Visão Geral
+- CRUD de watchlist: permite criar, listar, buscar por id, atualizar e remover itens monitorados.
+- Integração IBGE: valida um município pelo código (id) e resolve o código a partir de UF + nome do município.
 
-You can run your application in dev mode that enables live coding using:
+Estrutura do Código
+A organização segue uma separação por camadas, alinhada a princípios de Clean Architecture:
+- app/resource: classes REST (endpoints HTTP, validação básica e documentação OpenAPI).
+  - CitiesResource: expõe endpoints de cidades (IBGE).
+  - WatchlistResource: expõe endpoints da watchlist.
+- app/service: serviços de aplicação que orquestram casos de uso do domínio.
+  - CitiesService e WatchlistService: interfaces/implementações que chamam use cases.
+- domain/usecase: regras de negócio e casos de uso.
+  - CitiesUseCase, WatchUseCase e suas implementações (CitiesUseCaseImpl, WatchUseCaseImpl).
+- domain/gateway: portas de saída para integrações externas.
+  - IbgeGateway e IbgeGatewayImpl: abstração e implementação do cliente IBGE.
+- infra/restClient: cliente HTTP para IBGE usando MicroProfile Rest Client (IbgeClient).
+- infra/db: persistência com JPA/Hibernate.
+  - model/WatchlistEntity: entidade JPA que representa a tabela watchlist.
+  - repository/WatchRepository: acesso a dados (CRUD com Panache/EntityManager).
+- cross/mapper: conversores entre entidade e DTOs (MapperWatch).
+- app/dto: contratos de entrada e saída (request/response) usados pelos recursos REST.
+- resources/db/migration: migrações Flyway (V1__init_watchlist.sql).
 
-```shell script
-./mvnw quarkus:dev
-```
+Endpoints
+Base path: /api
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
+1) Watchlist
+Recurso: /api/watchlist
+- POST /api/watchlist
+  - O que faz: cria um novo item na watchlist.
+  - Body (JSON): WatchlistCreateRequest (campos como symbol, cityId, targetPrice, notes conforme o seu DTO).
+  - Resposta: 201 Created com corpo WatchlistItemEnrichedResponse e Location para o novo recurso.
+  - Exemplo:
+    curl -X POST http://localhost:8080/api/watchlist \
+      -H "Content-Type: application/json" \
+      -d '{"symbol":"PETR4.SA","cityId":3550308,"targetPrice":42.5,"notes":"Acompanhar resultado trimestral"}'
 
-## Packaging and running the application
+- GET /api/watchlist?page=0&size=20
+  - O que faz: lista itens paginados da watchlist.
+  - Parâmetros query: page (default 0), size (default 20, mínimo 1).
+  - Resposta: 200 OK com lista de WatchlistItemEnrichedResponse.
+  - Exemplo:
+    curl "http://localhost:8080/api/watchlist?page=0&size=20"
 
-The application can be packaged using:
+- GET /api/watchlist/{id}
+  - O que faz: busca um item da watchlist pelo id.
+  - Resposta: 200 OK com WatchlistItemEnrichedResponse ou 404 se não encontrado.
+  - Exemplo:
+    curl http://localhost:8080/api/watchlist/1
 
-```shell script
-./mvnw package
-```
+- PUT /api/watchlist/{id}
+  - O que faz: atualiza campos de um item existente.
+  - Body (JSON): WatchlistUpdateRequest (campos editáveis, p.ex. targetPrice, notes).
+  - Resposta: 200 OK com WatchlistItemEnrichedResponse atualizado; 404 se não encontrado.
+  - Exemplo:
+    curl -X PUT http://localhost:8080/api/watchlist/1 \
+      -H "Content-Type: application/json" \
+      -d '{"targetPrice":44.0,"notes":"Ajuste após guidance"}'
 
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
+- DELETE /api/watchlist/{id}
+  - O que faz: remove um item da watchlist pelo id.
+  - Resposta: 204 No Content.
+  - Exemplo:
+    curl -X DELETE http://localhost:8080/api/watchlist/1
 
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
+2) Cidades (IBGE)
+Recurso: /api/cities
+- GET /api/cities/{id}
+  - O que faz: valida se o código de município (id) existe no IBGE e retorna informações básicas.
+  - Parâmetro path: id (inteiro do município no IBGE).
+  - Resposta: 200 OK com CityInfo; 4xx/5xx em caso de erro.
+  - Exemplo:
+    curl http://localhost:8080/api/cities/3550308
 
-If you want to build an _über-jar_, execute the following command:
+- GET /api/cities/resolve?uf=SP&name=Sao%20Paulo
+  - O que faz: resolve o código do município (ID IBGE) a partir da UF e do nome do município.
+  - Parâmetros query: uf (sigla), name (nome do município). Ambos obrigatórios.
+  - Resposta: 200 OK com CityInfo; 400 se faltar parâmetro.
+  - Exemplo:
+    curl "http://localhost:8080/api/cities/resolve?uf=SP&name=Sao%20Paulo"
 
-```shell script
-./mvnw package -Dquarkus.package.jar.type=uber-jar
-```
+Como executar
+- Pré‑requisitos: Java 21, Maven, PostgreSQL.
+- Variáveis de ambiente típicas:
+  - QUARKUS_HTTP_PORT=8080
+  - DB_JDBC_URL=jdbc:postgresql://localhost:5432/postgres
+  - DB_USERNAME=postgres
+  - DB_PASSWORD=senha
+  - DB_SCHEMA=public
+  - FLYWAY_MIGRATE_AT_START=true
+- Rodar em dev:
+  - Windows: mvnw.cmd quarkus:dev
+  - Linux/macOS: ./mvnw quarkus:dev
 
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
+Configurações úteis (OpenAPI/Swagger)
+- OpenAPI JSON: http://localhost:8080/q/openapi
+- Swagger UI: http://localhost:8080/q/swagger-ui
+- Estas rotas estão habilitadas em src/main/resources/application.properties via quarkus.smallrye-openapi e quarkus.swagger-ui.
 
-## Creating a native executable
-
-You can create a native executable using:
-
-```shell script
-./mvnw package -Dnative
-```
-
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
-
-```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
-```
-
-You can then execute your native executable with: `./target/geofinance-smart-app-1.0.0-SNAPSHOT-runner`
-
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
-
-## Related Guides
-
-- REST ([guide](https://quarkus.io/guides/rest)): A Jakarta REST implementation utilizing build time processing and Vert.x. This extension is not compatible with the quarkus-resteasy extension, or any of the extensions that depend on it.
-- Flyway ([guide](https://quarkus.io/guides/flyway)): Handle your database schema migrations
-- REST Client ([guide](https://quarkus.io/guides/rest-client)): Call REST services
-- SmallRye OpenAPI ([guide](https://quarkus.io/guides/openapi-swaggerui)): Document your REST APIs with OpenAPI - comes with Swagger UI
-- REST Jackson ([guide](https://quarkus.io/guides/rest#json-serialisation)): Jackson serialization support for Quarkus REST. This extension is not compatible with the quarkus-resteasy extension, or any of the extensions that depend on it
-- Hibernate ORM with Panache ([guide](https://quarkus.io/guides/hibernate-orm-panache)): Simplify your persistence code for Hibernate ORM via the active record or the repository pattern
-- JDBC Driver - PostgreSQL ([guide](https://quarkus.io/guides/datasource)): Connect to the PostgreSQL database via JDBC
-
-## Provided Code
-
-### Hibernate ORM
-
-Create your first JPA entity
-
-[Related guide section...](https://quarkus.io/guides/hibernate-orm)
-
-[Related Hibernate with Panache section...](https://quarkus.io/guides/hibernate-orm-panache)
-
-
-### REST Client
-
-Invoke different services through REST with JSON
-
-[Related guide section...](https://quarkus.io/guides/rest-client)
-
-### REST
-
-Easily start your REST Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
+Observações
+- Os DTOs exatos (WatchlistCreateRequest, WatchlistUpdateRequest, WatchlistItemEnrichedResponse, CityInfo) podem ser consultados no pacote app/dto.
+- Os mapeamentos entre entidade JPA e DTOs estão em cross/mapper/MapperWatch.
+- A camada de domínio concentra os casos de uso e regras; as camadas app/ e infra/ somente expõem e persistem dados.
