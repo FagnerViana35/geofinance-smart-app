@@ -28,9 +28,7 @@ public class AssetAnalyticsResource {
     public List<AssetPerformance> top(
             @QueryParam("period") @DefaultValue("30d") String period,
             @QueryParam("size") @DefaultValue("10") int size,
-            @QueryParam("riskAdjusted") @DefaultValue("false") boolean riskAdjusted,
-            @QueryParam("symbols") String symbolsCsv,
-            @QueryParam("includeDividends") @DefaultValue("false") boolean includeDividends
+            @QueryParam("symbols") String symbolsCsv
     ) {
         List<String> symbols = (symbolsCsv == null || symbolsCsv.isBlank())
                 ? List.of()
@@ -41,7 +39,7 @@ public class AssetAnalyticsResource {
                     .distinct()
                     .collect(Collectors.toList());
 
-        return service.rankTopPerformers(symbols, period, size, riskAdjusted, includeDividends);
+        return service.rankTopPerformers(symbols, period, size);
     }
 
 }

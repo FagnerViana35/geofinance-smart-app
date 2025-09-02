@@ -26,9 +26,7 @@ public class AssertPerformersUseCaseImpl implements AssertPerformersUseCase{
     @Override
     public List<AssetPerformance> rankAssertPerformers(List<String> symbols,
                                                        String period,
-                                                       int size,
-                                                       boolean riskAdjusted,
-                                                       boolean includeDividends) {
+                                                       int size) {
         int topN = Math.max(1, size);
 
         List<BrapiQuoteItem> universe;
@@ -43,7 +41,7 @@ public class AssertPerformersUseCaseImpl implements AssertPerformersUseCase{
                     .collect(Collectors.toSet());
             List<BrapiQuoteItem> all = safeList( gateway.list(1, 500, "close", "desc") );
             universe = all.stream()
-                    .filter(it -> it.getStock() != null && wanted.contains(it.getStock().toUpperCase()))
+                    .filter(it -> it.getSymbol() != null && wanted.contains(it.getSymbol().toUpperCase()))
                     .toList();
         }
 

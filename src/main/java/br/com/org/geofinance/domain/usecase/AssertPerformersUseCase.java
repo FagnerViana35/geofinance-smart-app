@@ -8,6 +8,4 @@ public interface AssertPerformersUseCase {
 
     List<AssetPerformance> rankAssertPerformers(List<String> symbols,
                                                 String period,
-                                                int size,
-                                                boolean riskAdjusted,
-                                                boolean includeDividends);}
+                                                int size);}
