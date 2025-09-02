@@ -6,9 +6,10 @@ import br.com.org.geofinance.domain.gateway.BrapiGateway;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
+import lombok.extern.log4j.Log4j2;
 
 import java.util.List;
-
+@Log4j2
 @ApplicationScoped
 public class BrapiUseCaseImpl implements BrapiUseCase {
 
@@ -19,9 +20,11 @@ public class BrapiUseCaseImpl implements BrapiUseCase {
     @Override
     public List<BrapiQuoteItem> searchSymbols(String query, int limit) {
         if (query == null || query.isBlank()) {
+            log.error("Symbol, não está na lista de pesquisa");
             throw new BadRequestException("query é obrigatória");
         }
         if (limit < 1 || limit > 200) {
+            log.error("limit está fora do range");
             throw new BadRequestException("limit deve estar entre 1 e 200");
         }
         return gateway.search(query.trim(), limit);
