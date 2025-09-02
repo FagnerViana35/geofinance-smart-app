@@ -27,7 +27,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      QUARKUS_HTTP_PORT: "8080"
+      QUARKUS_HTTP_PORT: "8282"
       DB_JDBC_URL: jdbc:postgresql://db:5432/geofinance
       DB_USERNAME: geouser
       DB_PASSWORD: geopass
@@ -37,7 +37,7 @@ services:
       CONNECT_TIMEOUT: "5000"
       READ_TIMEOUT: "15000"
     ports:
-      - "8080:8080"
+      - "8282:8282"
     networks:
       - geofinance-net
 
