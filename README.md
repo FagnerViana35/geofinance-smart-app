@@ -1,114 +1,122 @@
 # geofinance-smart-app
 
-Sistema Quarkus para gerenciar uma watchlist de ativos e integrar dados urbanos do IBGE. Esta documentação explica, de forma clara, o que cada endpoint faz e descreve a estrutura do código do projeto.
+Sistema Quarkus para gerenciar uma watchlist de ativos e integrar dados urbanos do IBGE. Este README técnico documenta o problema de negócio, a arquitetura (com UML simplificado), algoritmos centrais, decisões e trade-offs, como executar localmente e exemplos reais de uso.
 
 Sumário
-- Visão Geral
-- Estrutura do Código (arquitetura)
-- Endpoints (com exemplos)
-- Como executar
+- Problema de negócio resolvido
+- Arquitetura e UML
+- Algoritmos e lógica de negócio
+- Decisões técnicas e trade-offs
+- Como executar localmente
+- Endpoints (com exemplos reais)
 - Configurações úteis (OpenAPI/Swagger)
 
-Visão Geral
-- CRUD de watchlist: permite criar, listar, buscar por id, atualizar e remover itens monitorados.
-- Integração IBGE: valida um município pelo código (id) e resolve o código a partir de UF + nome do município.
+Problema de negócio resolvido
+- Unificar informações financeiras de ativos com contexto geográfico brasileiro (IBGE) para apoiar decisões.
+- Permitir que usuários montem uma “watchlist” de ativos com preço-alvo e anotações.
+- Validar e enriquecer itens com dados de município (UF, nome) para relatórios e filtros regionais.
 
-Estrutura do Código
-A organização segue uma separação por camadas, alinhada a princípios de Clean Architecture:
-- app/resource: classes REST (endpoints HTTP, validação básica e documentação OpenAPI).
-  - CitiesResource: expõe endpoints de cidades (IBGE).
-  - WatchlistResource: expõe endpoints da watchlist.
-- app/service: serviços de aplicação que orquestram casos de uso do domínio.
-  - CitiesService e WatchlistService: interfaces/implementações que chamam use cases.
-- domain/usecase: regras de negócio e casos de uso.
-  - CitiesUseCase, WatchUseCase e suas implementações (CitiesUseCaseImpl, WatchUseCaseImpl).
-- domain/gateway: portas de saída para integrações externas.
-  - IbgeGateway e IbgeGatewayImpl: abstração e implementação do cliente IBGE.
-- infra/restClient: cliente HTTP para IBGE usando MicroProfile Rest Client (IbgeClient).
-- infra/db: persistência com JPA/Hibernate.
-  - model/WatchlistEntity: entidade JPA que representa a tabela watchlist.
-  - repository/WatchRepository: acesso a dados (CRUD com Panache/EntityManager).
-- cross/mapper: conversores entre entidade e DTOs (MapperWatch).
-- app/dto: contratos de entrada e saída (request/response) usados pelos recursos REST.
-- resources/db/migration: migrações Flyway (V1__init_watchlist.sql).
+Arquitetura e UML
+- Estilo em camadas inspirado em Clean Architecture: app (adaptação/REST), domain (regras), infra (persistência/integrações), cross (mapeadores/utilitários).
+- Principais componentes e relações (UML simplificado):
+  - WatchlistResource -> WatchlistService -> WatchUseCase -> WatchRepository -> WatchlistEntity
+  - CitiesResource -> CitiesService -> IbgeGateway -> IbgeClient (REST)
+  - AssertPerformersUseCase -> BrapiGateway (REST)
+  - MapperWatch/MapperAssetPerformance convertem entre DTOs e entidades/modelos externos
 
-Endpoints
+Algoritmos e lógica de negócio
+- Ranking de ativos (AssertPerformersUseCaseImpl):
+  - Entrada: symbols (opcional), period (opcional), size, flags (riskAdjusted/includeDividends - reservadas para evolução).
+  - Sem symbols: busca universo padrão via BrapiGateway.list(1, 200, "close", "desc").
+  - Com symbols: normaliza para maiúsculas, filtra um universo ampliado list(1, 500, ...).
+  - Mapeia itens BrapiQuoteItem -> AssetPerformance via MapperAssetPerformance.
+  - Ordena por changePct (nulo tratado como 0) desc e limita a topN = max(1, size).
+- Atualização parcial da watchlist (WatchRepository.update):
+  - Constrói dinamicamente um JPQL de update somente com campos presentes (targetPrice, notes), sempre atualizando updatedAt.
+  - Se nenhum campo for informado, retorna o estado atual (mapeado) sem alterar o banco.
+  - Retorna Optional.empty quando id inexistente.
+- Regras de validação (WatchUseCaseImpl):
+  - create: payload obrigatório; se cityId presente, valida no IbgeGateway; persiste e retorna resposta enriquecida (CityInfo quando disponível).
+  - list/get/update/delete: paginação, not-found, enriquecimento opcional com cidade.
+- Integração IBGE (IbgeGatewayImpl):
+  - findCityById: consulta REST, mapeia para CityInfo com UF (quando presente), trata erros retornando Optional.empty.
+  - findCitiesByUf: normaliza UF, consulta lista e mapeia para CityInfo.
+
+Decisões técnicas e trade-offs
+- Quarkus 3.x: inicialização rápida e perfil dev produtivo; exige alinhamento de versões do plugin e BOM (já configurado no pom.xml).
+- Panache (Hibernate ORM): produtividade em CRUDs e JPQL dinâmico; trade-off: acoplamento ao ecossistema Quarkus.
+- Flyway para migração: previsibilidade no schema; em testes usamos H2 em memória com DDL auto (mais rápido) para isolar.
+- MicroProfile Rest Client: tipifica integrações (IBGE/Brapi) com timeouts configuráveis; requer tratamento de falhas.
+- Lombok: reduz boilerplate; depende de annotation processing.
+
+Como executar localmente
+- Pré‑requisitos: Java 21, Maven, PostgreSQL local (ou alterar JDBC para seu ambiente).
+- Variáveis de ambiente (padrões no application.properties):
+  - QUARKUS_HTTP_PORT=8080
+  - DB_JDBC_URL=jdbc:postgresql://localhost:5432/postgres
+  - DB_USERNAME=postgres
+  - DB_PASSWORD=senha
+  - DB_SCHEMA=postgres
+  - FLYWAY_MIGRATE_AT_START=true
+  - CONNECT_TIMEOUT=5000, READ_TIMEOUT=10000..15000
+- Rodar em dev:
+  - Windows: mvnw.cmd quarkus:dev
+  - Linux/macOS: ./mvnw quarkus:dev
+- Rodar testes:
+  - mvnw.cmd -q test (Windows) | ./mvnw -q test (Unix)
+  - Para classes específicas: -Dtest=br.com.org.geofinance.domain.usecase.AssertPerformersUseCaseImplTest
+
+Endpoints (com exemplos reais)
 Base path: /api
 
 1) Watchlist
 Recurso: /api/watchlist
 - POST /api/watchlist
-  - O que faz: cria um novo item na watchlist.
-  - Body (JSON): WatchlistCreateRequest (campos como symbol, cityId, targetPrice, notes conforme o seu DTO).
-  - Resposta: 201 Created com corpo WatchlistItemEnrichedResponse e Location para o novo recurso.
-  - Exemplo:
-    curl -X POST http://localhost:8080/api/watchlist \
-      -H "Content-Type: application/json" \
-      -d '{"symbol":"PETR4.SA","cityId":3550308,"targetPrice":42.5,"notes":"Acompanhar resultado trimestral"}'
-
+  - Body:
+    {"symbol":"PETR4","cityId":3550308,"targetPrice":10.50,"notes":"n1"}
+  - Resposta 201 (trecho): {"id":1,"symbol":"PETR4","city":{"id":3550308,"uf":"SP"}}
 - GET /api/watchlist?page=0&size=20
-  - O que faz: lista itens paginados da watchlist.
-  - Parâmetros query: page (default 0), size (default 20, mínimo 1).
-  - Resposta: 200 OK com lista de WatchlistItemEnrichedResponse.
-  - Exemplo:
-    curl "http://localhost:8080/api/watchlist?page=0&size=20"
-
+  - Resposta 200: lista com itens, ex: [ {"symbol":"PETR4"}, {"symbol":"VALE3"} ]
 - GET /api/watchlist/{id}
-  - O que faz: busca um item da watchlist pelo id.
-  - Resposta: 200 OK com WatchlistItemEnrichedResponse ou 404 se não encontrado.
-  - Exemplo:
-    curl http://localhost:8080/api/watchlist/1
-
+  - Resposta 200: {"id":10,"symbol":"BBAS3","city":{"uf":"DF"}}
 - PUT /api/watchlist/{id}
-  - O que faz: atualiza campos de um item existente.
-  - Body (JSON): WatchlistUpdateRequest (campos editáveis, p.ex. targetPrice, notes).
-  - Resposta: 200 OK com WatchlistItemEnrichedResponse atualizado; 404 se não encontrado.
-  - Exemplo:
-    curl -X PUT http://localhost:8080/api/watchlist/1 \
-      -H "Content-Type: application/json" \
-      -d '{"targetPrice":44.0,"notes":"Ajuste após guidance"}'
-
+  - Body: {"targetPrice":20.00,"notes":"upd"}
+  - Resposta 200: {"id":5,"symbol":"WEGE3"}
 - DELETE /api/watchlist/{id}
-  - O que faz: remove um item da watchlist pelo id.
-  - Resposta: 204 No Content.
-  - Exemplo:
-    curl -X DELETE http://localhost:8080/api/watchlist/1
+  - Resposta 204
 
 2) Cidades (IBGE)
 Recurso: /api/cities
 - GET /api/cities/{id}
-  - O que faz: valida se o código de município (id) existe no IBGE e retorna informações básicas.
-  - Parâmetro path: id (inteiro do município no IBGE).
-  - Resposta: 200 OK com CityInfo; 4xx/5xx em caso de erro.
-  - Exemplo:
-    curl http://localhost:8080/api/cities/3550308
-
+  - Ex: /api/cities/3550308 -> CityInfo { id, nome, uf }
 - GET /api/cities/resolve?uf=SP&name=Sao%20Paulo
-  - O que faz: resolve o código do município (ID IBGE) a partir da UF e do nome do município.
-  - Parâmetros query: uf (sigla), name (nome do município). Ambos obrigatórios.
-  - Resposta: 200 OK com CityInfo; 400 se faltar parâmetro.
-  - Exemplo:
-    curl "http://localhost:8080/api/cities/resolve?uf=SP&name=Sao%20Paulo"
-
-Como executar
-- Pré‑requisitos: Java 21, Maven, PostgreSQL.
-- Variáveis de ambiente típicas:
-  - QUARKUS_HTTP_PORT=8080
-  - DB_JDBC_URL=jdbc:postgresql://localhost:5432/postgres
-  - DB_USERNAME=postgres
-  - DB_PASSWORD=senha
-  - DB_SCHEMA=public
-  - FLYWAY_MIGRATE_AT_START=true
-- Rodar em dev:
-  - Windows: mvnw.cmd quarkus:dev
-  - Linux/macOS: ./mvnw quarkus:dev
+  - Ex: retorna CityInfo do município
 
 Configurações úteis (OpenAPI/Swagger)
 - OpenAPI JSON: http://localhost:8080/q/openapi
 - Swagger UI: http://localhost:8080/q/swagger-ui
-- Estas rotas estão habilitadas em src/main/resources/application.properties via quarkus.smallrye-openapi e quarkus.swagger-ui.
+- Habilitadas em src/main/resources/application.properties via quarkus.smallrye-openapi e quarkus.swagger-ui.
 
-Observações
-- Os DTOs exatos (WatchlistCreateRequest, WatchlistUpdateRequest, WatchlistItemEnrichedResponse, CityInfo) podem ser consultados no pacote app/dto.
-- Os mapeamentos entre entidade JPA e DTOs estão em cross/mapper/MapperWatch.
-- A camada de domínio concentra os casos de uso e regras; as camadas app/ e infra/ somente expõem e persistem dados.
+Executar com Docker (app + Postgres)
+- Pré‑requisito: Docker Desktop (Compose v2).
+- Passos:
+  1) Empacote o app: mvnw.cmd -q package -DskipTests (Windows) | ./mvnw -q package -DskipTests (Unix)
+  2) Suba os serviços: docker compose up --build
+  3) Acesse: http://localhost:8080/q/swagger-ui
+- Serviços:
+  - db: postgres:16-alpine
+    - Credenciais: geouser/geopass, DB: geofinance
+    - Volume de dados: volume nomeado db_data
+  - app: imagem construída a partir de src/main/docker/Dockerfile.jvm
+    - Porta 8080 exposta
+    - Variáveis principais:
+      - DB_JDBC_URL=jdbc:postgresql://db:5432/geofinance
+      - DB_USERNAME=geouser, DB_PASSWORD=geopass, DB_SCHEMA=public
+      - FLYWAY_MIGRATE_AT_START=true (migrações aplicadas automaticamente)
+- Comandos úteis:
+  - Parar: docker compose down
+  - Limpar dados: docker compose down -v
+
+Notas adicionais
+- DTOs: pacote app/dto; Mappers: cross/mapper; Repositório: infra/db/repository; Entidade: infra/db/model.
+- Gateways: domain/gateway; Casos de uso: domain/usecase. Este README cobre os principais fluxos e decisões para onboarding rápido.

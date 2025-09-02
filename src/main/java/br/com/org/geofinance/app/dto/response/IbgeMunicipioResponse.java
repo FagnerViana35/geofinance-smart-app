@@ -13,16 +13,16 @@ public class IbgeMunicipioResponse {
     private String nome;
     private Microrregiao microrregiao;
 
-    @Getter
+    @Data
     public static class Microrregiao {
         private Mesorregiao mesorregiao;
     }
-    @Getter
+    @Data
     public static class Mesorregiao {
         @JsonProperty("UF")
         private Uf uf;
     }
-    @Getter
+    @Data
     public static class Uf {
         private String sigla;
     }

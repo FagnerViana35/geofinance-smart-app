@@ -3,7 +3,7 @@ package br.com.org.geofinance.app.resource;
 import br.com.org.geofinance.app.dto.request.WatchlistCreateRequest;
 import br.com.org.geofinance.app.dto.request.WatchlistUpdateRequest;
 import br.com.org.geofinance.app.dto.response.CityInfo;
-import br.com.org.geofinance.app.dto.response.WatchlistItemEnrichedResponse;
+import br.com.org.geofinance.app.dto.response.WatchlistItemResponse;
 import br.com.org.geofinance.app.service.WatchlistService;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -25,8 +25,8 @@ class WatchlistResourceTest {
     @InjectMock
     WatchlistService service;
 
-    private WatchlistItemEnrichedResponse enriched(Long id, String symbol, Integer cityId, String cityUf) {
-        WatchlistItemEnrichedResponse r = new WatchlistItemEnrichedResponse();
+    private WatchlistItemResponse enriched(Long id, String symbol, Integer cityId, String cityUf) {
+        WatchlistItemResponse r = new WatchlistItemResponse();
         r.setId(id);
         r.setSymbol(symbol);
         r.setCityId(cityId);
@@ -42,7 +42,7 @@ class WatchlistResourceTest {
 
     @Test
     @DisplayName("POST /api/watchlist returns 201 with Location and body")
-    void create_watchlist_item() {
+    void testCreateWatchListItem() {
         var req = WatchlistCreateRequest.builder()
                 .symbol("PETR4")
                 .cityId(3550308)
@@ -67,7 +67,7 @@ class WatchlistResourceTest {
 
     @Test
     @DisplayName("GET /api/watchlist returns list")
-    void list_watchlist_items() {
+    void testListWatchListItems() {
         when(service.list(0, 20)).thenReturn(List.of(
                 enriched(1L, "PETR4", 3550308, "SP"),
                 enriched(2L, "VALE3", null, null)
@@ -84,7 +84,7 @@ class WatchlistResourceTest {
 
     @Test
     @DisplayName("GET /api/watchlist/{id} returns item")
-    void get_by_id_ok() {
+    void testGetByIdOk() {
         when(service.getById(10L)).thenReturn(enriched(10L, "BBAS3", 5300108, "DF"));
 
         given()
@@ -98,7 +98,7 @@ class WatchlistResourceTest {
 
     @Test
     @DisplayName("GET /api/watchlist/{id} returns 404 when not found")
-    void get_by_id_not_found() {
+    void testGetByIdNotFound() {
         when(service.getById(999L)).thenThrow(new NotFoundException("not found"));
 
         given()
@@ -109,7 +109,7 @@ class WatchlistResourceTest {
 
     @Test
     @DisplayName("PUT /api/watchlist/{id} returns updated item")
-    void update_ok() {
+    void testUpdateOk() {
         var req = WatchlistUpdateRequest.builder()
                 .targetPrice(new BigDecimal("20.00"))
                 .notes("upd")
@@ -130,7 +130,7 @@ class WatchlistResourceTest {
 
     @Test
     @DisplayName("PUT /api/watchlist/{id} returns 404 when not found")
-    void update_not_found() {
+    void testUpdateNotFound() {
         var req = WatchlistUpdateRequest.builder().notes("x").build();
         when(service.update(org.mockito.ArgumentMatchers.eq(404L), org.mockito.ArgumentMatchers.any(WatchlistUpdateRequest.class)))
                 .thenThrow(new NotFoundException("not found"));
@@ -146,7 +146,7 @@ class WatchlistResourceTest {
 
     @Test
     @DisplayName("DELETE /api/watchlist/{id} returns 204")
-    void delete_ok() {
+    void testDeleteOk() {
         given()
                 .when().delete("/api/watchlist/7")
                 .then()
@@ -155,7 +155,7 @@ class WatchlistResourceTest {
 
     @Test
     @DisplayName("DELETE /api/watchlist/{id} returns 404 when not found")
-    void delete_not_found() {
+    void deleteNotFound() {
         // make service.delete throw NotFoundException
         org.mockito.Mockito.doThrow(new NotFoundException("nf"))
                 .when(service).delete(777L);

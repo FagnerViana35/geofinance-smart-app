@@ -18,6 +18,11 @@ public class IbgeGatewayImpl implements IbgeGateway {
     @RestClient
     IbgeClient client;
 
+    public IbgeGatewayImpl() {}
+    IbgeGatewayImpl(IbgeClient client) {
+        this.client = client;
+    }
+
     @Override
     public Optional<CityInfo> findCityById(int cityId) {
         try {
