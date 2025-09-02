@@ -13,9 +13,8 @@ public class AssertPerformersService {
     @Inject
     AssertPerformersUseCase useCase;
 
-    public List<AssetPerformance> rankTopPerformers(List<String> symbols, String period, int size,
-                                                    boolean riskAdjusted, boolean includeDividends) {
-        return useCase.rankAssertPerformers(symbols, period, size, riskAdjusted, includeDividends);
+    public List<AssetPerformance> rankTopPerformers(List<String> symbols, String period, int size) {
+        return useCase.rankAssertPerformers(symbols, period, size);
     }
 
 }
