@@ -1,10 +1,7 @@
 package br.com.org.geofinance.app.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @NoArgsConstructor
@@ -16,18 +13,17 @@ public class IbgeMunicipioResponse {
     private String nome;
     private Microrregiao microrregiao;
 
+    @Getter
     public static class Microrregiao {
         private Mesorregiao mesorregiao;
-        public Mesorregiao getMesorregiao() { return mesorregiao; }
     }
+    @Getter
     public static class Mesorregiao {
         @JsonProperty("UF")
         private Uf uf;
-        public Uf getUf() { return uf; }
     }
+    @Getter
     public static class Uf {
         private String sigla;
-        public String getSigla() { return sigla; }
     }
-
 }

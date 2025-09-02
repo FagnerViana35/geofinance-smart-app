@@ -8,15 +8,16 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.NotFoundException;
+import lombok.extern.log4j.Log4j2;
 
 import java.util.List;
 
+@Log4j2
 @ApplicationScoped
 public class CitiesUseCaseImpl implements CitiesUseCase {
 
     @Inject
     IbgeGateway ibgeGateway;
-    // @Inject CitiesCache cache; // opcional
 
     @Override
     public CityInfo validateById(int id) {
@@ -27,9 +28,10 @@ public class CitiesUseCaseImpl implements CitiesUseCase {
     @Override
     public CityInfo resolveByUfAndName(String uf, String name) {
         if (uf == null || uf.isBlank() || name == null || name.isBlank()) {
+            log.error("O valoe do Estado (UF) está inválido");
             throw new BadRequestException("Parâmetros uf e name são obrigatórios");
         }
-        var list = listMunicipiosByUf(uf); // via gateway
+        var list = listMunicipiosByUf(uf);
         var matches = list.stream()
                 .filter(c -> c.getName() != null && c.getName().equalsIgnoreCase(name))
                 .toList();
@@ -42,7 +44,6 @@ public class CitiesUseCaseImpl implements CitiesUseCase {
         return matches.get(0);
     }
 
-    // Usa o gateway para listar municípios da UF (normaliza para maiúsculas)
     private List<CityInfo> listMunicipiosByUf(String uf) {
         String norm = uf.trim().toUpperCase();
         var cities = ibgeGateway.findCitiesByUf(norm);

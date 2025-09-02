@@ -11,23 +11,13 @@ public class MapperAssetPerformance {
         if (it == null) {
             return null;
         }
-        // Mapeia informações básicas do brapi para o DTO de performance. Muitos campos
-        // (ex.: period, dividendsPct, volatility, score, dataPoints) não estão disponíveis
-        // na resposta do brapi.list(), então mantemos como null para possível enriquecimento futuro.
         return AssetPerformance.builder()
                 .symbol(it.getStock())
-                .changePct(it.getChangeValue())
-                .changePercent(it.getChangePercent())
+                .changePct(it.getChange())
+                .changePercent(it.getChange())
                 .close(it.getClose())
                 .sector(it.getSector())
                 .name(it.getName())
                 .build();
     }
-
-//                 it.getStock(),
-//                         it.getName(),
-//                         it.getClose(),
-//                         it.getChange(),   // variação percentual recente
-//                         it.getSector(),
-//                         it.getSegment()
 }

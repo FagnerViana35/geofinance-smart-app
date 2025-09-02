@@ -13,21 +13,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-//Rranquear os ativos (ações, fundos, etc.)
-//que tiveram melhor desempenho em determinado período.
-//Buscar cotações de ativos financeiros.
-//Filtrar e selecionar ativos de interesse.
-//Calcular e ordenar o desempenho dos ativos.
-//Retornar os ativos mais rentáveis em um ranking.
-//List<String> symbols: Lista de códigos dos ativos que você quer analisar. Se for nula ou vazia, o método busca um conjunto padrão de ativos.
-
-//String period: Período de análise do desempenho dos ativos (ex: "1m", "6m", "1y"). No código atual, esse parâmetro ainda não é utilizado.
-
-//int size: Quantidade de ativos que você quer no ranking final (top N). O método garante que pelo menos 1 ativo será retornado.
-
-//boolean riskAdjusted: Indica se o ranking deve considerar ajuste por risco (ex: Sharpe Ratio). No código atual, esse parâmetro ainda não é utilizado.
-
-//boolean includeDividends: Indica se deve considerar dividendos no cálculo do desempenho. No código atual, esse parâmetro ainda não é utilizado.
 @Log4j2
 @ApplicationScoped
 public class AssertPerformersUseCaseImpl implements AssertPerformersUseCase{
@@ -46,13 +31,12 @@ public class AssertPerformersUseCaseImpl implements AssertPerformersUseCase{
                                                        boolean includeDividends) {
         int topN = Math.max(1, size);
 
-        // 1) Obter universo de análise
         List<BrapiQuoteItem> universe;
         if (symbols == null || symbols.isEmpty()) {
-            // Sem lista de símbolos: carrega uma página “grande” do brapi e ranqueia pelo change
+
             universe = safeList( gateway.list(1, 200, "close", "desc") );
         } else {
-            // Com lista: para reduzir chamadas, usa list do brapi e filtra os desejados
+
             Set<String> wanted = symbols.stream()
                     .filter(Objects::nonNull)
                     .map(s -> s.trim().toUpperCase())
@@ -63,18 +47,16 @@ public class AssertPerformersUseCaseImpl implements AssertPerformersUseCase{
                     .toList();
         }
 
-        // 2) Montar métricas: aqui usamos change do brapi como “performance recente”
+
         List<AssetPerformance> ranked = universe.stream()
                 .filter(Objects::nonNull)
                 .map(mapper::toAssetPerformance)
-                // 3) Ordenar por “quem rendeu mais”: changePct desc
                 .sorted((a, b) -> Double.compare(
                         nullableToZero(b.getChangePct()), nullableToZero(a.getChangePct())))
+
                 .limit(topN)
                 .toList();
 
-        // Observação: riskAdjusted/includeDividends ignorados aqui por falta de histórico/dividendos.
-        // Para evoluir: trocar para um gateway de histórico e calcular totalReturn/volatilidade.
 
         return ranked;
     }

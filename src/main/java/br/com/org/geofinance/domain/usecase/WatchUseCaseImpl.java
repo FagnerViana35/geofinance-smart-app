@@ -3,7 +3,6 @@ package br.com.org.geofinance.domain.usecase;
 import br.com.org.geofinance.app.dto.request.WatchlistCreateRequest;
 import br.com.org.geofinance.app.dto.request.WatchlistUpdateRequest;
 import br.com.org.geofinance.app.dto.response.CityInfo;
-import br.com.org.geofinance.app.dto.response.WatchlistItemEnrichedResponse;
 import br.com.org.geofinance.app.dto.response.WatchlistItemResponse;
 import br.com.org.geofinance.cross.mapper.MapperWatch;
 import br.com.org.geofinance.domain.gateway.IbgeGateway;
@@ -13,8 +12,12 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
+import lombok.extern.log4j.Log4j2;
 
+import java.math.BigDecimal;
 import java.util.List;
+
+@Log4j2
 @ApplicationScoped
 public class WatchUseCaseImpl implements WatchUseCase {
     @Inject
@@ -29,12 +32,12 @@ public class WatchUseCaseImpl implements WatchUseCase {
 
     // ... existing code ...
     @Override
-    public WatchlistItemEnrichedResponse create(WatchlistCreateRequest request) {
+    public WatchlistItemResponse create(WatchlistCreateRequest request) {
         if (request == null) {
+            log.error("O payload está nulo");
             throw new BadRequestException("Payload obrigatório");
         }
 
-        // cityId é opcional: valide no IBGE apenas se vier
         CityInfo city = null;
         if (request.getCityId() != null) {
             if (request.getCityId() <= 0) {
@@ -48,58 +51,71 @@ public class WatchUseCaseImpl implements WatchUseCase {
         }
         var entity = mapperWatch.toEntity(request);
         repository.persist(entity);
+        log.info("Investimento inserido com sucesso na carteira");
         return mapperWatch.toEnrichedResponse(entity, city);
     }
 
 
     @Override
-    public List<WatchlistItemEnrichedResponse> list(int page, int size) {
+    public List<WatchlistItemResponse> list(int page, int size) {
         if (page < 0 || size < 1) {
             throw new BadRequestException("Parâmetros de paginação inválidos");
         }
         var entities = repository.findAll()
                 .page(Page.of(page, size))
                 .list();
+        log.info("Busca efetuada com sucesso");
         return entities.stream()
                 .map(e -> {
-                    var city = ibgeGateway.findCityById(e.getCityId()).orElse(null);
-                    return mapperWatch.toEnrichedResponse(e, city);
+                    return mapperWatch.toResponse(e);
                 })
                 .toList();
+
     }
 
 
     @Override
-    public WatchlistItemEnrichedResponse getById(Long id) {
+    public WatchlistItemResponse getById(Long id) {
         var entity = repository.findById(id);
         if (entity == null) {
             throw new NotFoundException("Watchlist item " + id + " não encontrado");
         }
         var city = ibgeGateway.findCityById(entity.getCityId()).orElse(null);
+        log.info("Busca do ID efetuada com sucesso");
         return mapperWatch.toEnrichedResponse(entity, city);
     }
 
 
     @Override
-    public WatchlistItemEnrichedResponse update(Long id, WatchlistUpdateRequest request) {
-        // Se o seu repository.update retorna Optional<WatchlistItemResponse>, apenas use-o para testar existência
+    public WatchlistItemResponse update(Long id, WatchlistUpdateRequest request) {
+
         var updated = repository.update(id, request);
+        log.info("Edição concluída");
         if (updated.isEmpty()) {
             throw new NotFoundException("Watchlist item " + id + " não encontrado");
         }
-        // Recarrega a entidade para enriquecer corretamente (createdAt/updatedAt atualizados)
+
         var entity = repository.findById(id);
         if (entity == null) {
             throw new NotFoundException("Watchlist item " + id + " não encontrado");
         }
         var city = ibgeGateway.findCityById(entity.getCityId()).orElse(null);
         return mapperWatch.toEnrichedResponse(entity, city);
+    }
+
+    public BigDecimal sumAllTargetPrice() {
+        return repository.sumAllTargetPrice();
+    }
+
+    public BigDecimal sumTargetPriceByCity(Integer cityId) {
+        return repository.sumTargetPriceByCity(cityId);
     }
 
 
     @Override
     public void delete(Long id) {
         boolean removed = repository.deleteById(id);
+        log.info("Objeto foi deletado concluída");
         if (!removed) throw new NotFoundException("Watchlist item " + id + " não encontrado");
     }
 

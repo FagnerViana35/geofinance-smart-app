@@ -5,11 +5,13 @@ import br.com.org.geofinance.app.dto.response.IbgeMunicipioResponse;
 import br.com.org.geofinance.infra.restClient.IbgeClient;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @ApplicationScoped
 public class IbgeGatewayImpl implements IbgeGateway {
     @Inject
@@ -26,9 +28,10 @@ public class IbgeGatewayImpl implements IbgeGateway {
                     && res.getMicrorregiao().getMesorregiao().getUf() != null
                     ? res.getMicrorregiao().getMesorregiao().getUf().getSigla()
                     : null;
+            log.info("CitiId foi encontrado");
             return Optional.of(new CityInfo(res.getId(), res.getNome(), uf));
         } catch (Exception e) {
-            // Em produção, trate timeouts/429 com estratégia de retry ou devolva Optional.empty()
+            log.error("CitiId não foi encontrado");
             return Optional.empty();
         }
     }
@@ -47,10 +50,12 @@ public class IbgeGatewayImpl implements IbgeGateway {
                                 && res.getMicrorregiao().getMesorregiao().getUf() != null
                                 ? res.getMicrorregiao().getMesorregiao().getUf().getSigla()
                                 : norm;
+                        log.info("CitiId foi encontrado");
                         return new CityInfo(res.getId(), res.getNome(), sigla);
                     })
                     .toList();
         } catch (Exception e) {
+            log.error("Cidade não foi encontrada, verifica o {} correto", uf, e);
             return List.of();
         }
     }

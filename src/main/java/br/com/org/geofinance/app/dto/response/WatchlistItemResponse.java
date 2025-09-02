@@ -13,9 +13,11 @@ import java.time.OffsetDateTime;
 @AllArgsConstructor
 @Builder
 public class WatchlistItemResponse {
+
     private Long id;
     private String symbol;
     private Integer cityId;
+    private CityInfo city;
     private BigDecimal targetPrice;
     private String notes;
     private OffsetDateTime createdAt;

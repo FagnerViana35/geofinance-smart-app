@@ -9,6 +9,7 @@ import io.quarkus.panache.common.Parameters;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 
@@ -33,7 +34,6 @@ public class WatchRepository implements PanacheRepository<WatchlistEntity> {
         }
 
         if (jpql.toString().equals("updatedAt = :updatedAt")) {
-            // Nada para atualizar
             WatchlistEntity current = findById(id);
             return Optional.ofNullable(current).map(mapperWatch::toResponse);
         }
@@ -50,17 +50,17 @@ public class WatchRepository implements PanacheRepository<WatchlistEntity> {
         long rows = delete("id = :id", Parameters.with("id", id));
         return rows > 0;
     }
-    public java.math.BigDecimal sumAllTargetPrice() {
+    public BigDecimal sumAllTargetPrice() {
         var result = getEntityManager()
-                .createQuery("select coalesce(sum(w.targetPrice),0) from WatchlistEntity w", java.math.BigDecimal.class)
+                .createQuery("select coalesce(sum(w.targetPrice),0) from WatchlistEntity w", BigDecimal.class)
                 .getSingleResult();
-        return result == null ? java.math.BigDecimal.ZERO : result;
+        return result == null ? BigDecimal.ZERO : result;
     }
 
-    public java.math.BigDecimal sumTargetPriceByCity(Integer cityId) {
-        if (cityId == null) return java.math.BigDecimal.ZERO;
+    public BigDecimal sumTargetPriceByCity(Integer cityId) {
+        if (cityId == null) return BigDecimal.ZERO;
         var result = getEntityManager()
-                .createQuery("select coalesce(sum(w.targetPrice),0) from WatchlistEntity w where w.cityId = :cityId", java.math.BigDecimal.class)
+                .createQuery("select coalesce(sum(w.targetPrice),0) from WatchlistEntity w where w.cityId = :cityId", BigDecimal.class)
                 .setParameter("cityId", cityId)
                 .getSingleResult();
         return result == null ? java.math.BigDecimal.ZERO : result;

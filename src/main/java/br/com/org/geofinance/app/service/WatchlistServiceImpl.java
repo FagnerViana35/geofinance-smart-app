@@ -2,12 +2,13 @@ package br.com.org.geofinance.app.service;
 
 import br.com.org.geofinance.app.dto.request.WatchlistCreateRequest;
 import br.com.org.geofinance.app.dto.request.WatchlistUpdateRequest;
-import br.com.org.geofinance.app.dto.response.WatchlistItemEnrichedResponse;
+import br.com.org.geofinance.app.dto.response.WatchlistItemResponse;
 import br.com.org.geofinance.domain.usecase.WatchUseCase;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @ApplicationScoped
@@ -18,23 +19,23 @@ public class WatchlistServiceImpl implements WatchlistService {
 
     @Override
     @Transactional
-    public WatchlistItemEnrichedResponse create(WatchlistCreateRequest request) {
+    public WatchlistItemResponse create(WatchlistCreateRequest request) {
         return watchUseCase.create(request);
     }
 
     @Override
-    public List<WatchlistItemEnrichedResponse> list(int page, int size) {
+    public List<WatchlistItemResponse> list(int page, int size) {
       return watchUseCase.list(page, size);
     }
 
     @Override
-    public WatchlistItemEnrichedResponse getById(Long id) {
+    public WatchlistItemResponse getById(Long id) {
         return watchUseCase.getById(id);
     }
 
     @Override
     @Transactional
-    public WatchlistItemEnrichedResponse update(Long id, WatchlistUpdateRequest request) {
+    public WatchlistItemResponse update(Long id, WatchlistUpdateRequest request) {
         return watchUseCase.update(id, request);
     }
 
@@ -44,17 +45,14 @@ public class WatchlistServiceImpl implements WatchlistService {
         watchUseCase.delete(id);
     }
 
-    @jakarta.inject.Inject
-    br.com.org.geofinance.infra.db.repository.WatchRepository watchRepository;
-
     @Override
-    public java.math.BigDecimal sumAllTargetPrice() {
-        return watchRepository.sumAllTargetPrice();
+    public BigDecimal sumAllTargetPrice() {
+        return watchUseCase.sumAllTargetPrice();
     }
 
     @Override
-    public java.math.BigDecimal sumTargetPriceByCity(Integer cityId) {
-        return watchRepository.sumTargetPriceByCity(cityId);
+    public BigDecimal sumTargetPriceByCity(Integer cityId) {
+        return watchUseCase.sumTargetPriceByCity(cityId);
     }
 
 }

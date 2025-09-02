@@ -14,15 +14,11 @@ import lombok.NoArgsConstructor;
 public class AssetPerformance {
     private  String symbol;
     private  String period;
-    private  Double priceReturnPct;
-    private  Double dividendsPct;
-    private  Double totalReturnPct;
     private  Double changePercent;
     private  Double changePct;
-    private  Double volatility;
-    private  Double score;
     private  Integer dataPoints;
     private  Double  close;
     private  String sector;
     private String name;
+    private String currency;
 }

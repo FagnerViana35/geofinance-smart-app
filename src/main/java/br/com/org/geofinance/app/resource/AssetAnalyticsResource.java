@@ -35,7 +35,7 @@ public class AssetAnalyticsResource {
         List<String> symbols = (symbolsCsv == null || symbolsCsv.isBlank())
                 ? List.of()
                 : Arrays.stream(symbolsCsv.split(","))
-                    .map(s -> s.trim())
+                    .map(String::trim)
                     .filter(s -> !s.isEmpty())
                     .map(String::toUpperCase)
                     .distinct()

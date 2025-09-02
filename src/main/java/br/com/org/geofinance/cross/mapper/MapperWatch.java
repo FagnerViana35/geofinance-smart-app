@@ -2,7 +2,6 @@ package br.com.org.geofinance.cross.mapper;
 
 import br.com.org.geofinance.app.dto.request.WatchlistCreateRequest;
 import br.com.org.geofinance.app.dto.response.CityInfo;
-import br.com.org.geofinance.app.dto.response.WatchlistItemEnrichedResponse;
 import br.com.org.geofinance.app.dto.response.WatchlistItemResponse;
 import br.com.org.geofinance.infra.db.model.WatchlistEntity;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -20,22 +19,28 @@ public class MapperWatch {
                 .build();
     }
 
-    // Mantém o DTO "base" (sem enriquecimento)
     public WatchlistItemResponse toResponse(WatchlistEntity e) {
-        return new WatchlistItemResponse(
-                e.getId(),
-                e.getSymbol(),
-                e.getCityId(),
-                e.getTargetPrice(),
-                e.getNotes(),
-                e.getCreatedAt(),
-                e.getUpdatedAt()
-        );
+        if (e == null) return null;
+        CityInfo city = null;
+        if (e.getCityId() != null) {
+            city = CityInfo.builder()
+                    .id(e.getCityId())
+                    .build();
+        }
+        return WatchlistItemResponse.builder()
+                .id(e.getId())
+                .symbol(e.getSymbol())
+                .cityId(e.getCityId())
+                .city(city)
+                .targetPrice(e.getTargetPrice())
+                .notes(e.getNotes())
+                .createdAt(e.getCreatedAt())
+                .updatedAt(e.getUpdatedAt())
+                .build();
     }
 
-    // Novo: mapeia uma resposta "enriquecida" com dados do IBGE já resolvidos no serviço
-    public WatchlistItemEnrichedResponse toEnrichedResponse(WatchlistEntity e, CityInfo city) {
-        WatchlistItemEnrichedResponse r = new WatchlistItemEnrichedResponse();
+    public WatchlistItemResponse toEnrichedResponse(WatchlistEntity e, CityInfo city) {
+        WatchlistItemResponse r = new WatchlistItemResponse();
         r.setId(e.getId());
         r.setSymbol(e.getSymbol());
         r.setCityId(e.getCityId());
@@ -43,8 +48,10 @@ public class MapperWatch {
         r.setNotes(e.getNotes());
         r.setCreatedAt(e.getCreatedAt());
         r.setUpdatedAt(e.getUpdatedAt());
-        r.setCity(city); // pode ser null se IBGE estiver indisponível no GET
+        r.setCity(city);
         return r;
     }
+
+
 
 }
