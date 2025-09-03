@@ -24,7 +24,7 @@ class BrapiUseCaseImplTest {
     BrapiGateway gateway;
 
     private BrapiQuoteItem item(String stock) {
-        return BrapiQuoteItem.builder().symbol(stock).build();
+        return BrapiQuoteItem.builder().stock(stock).build();
     }
 
     @Test
@@ -34,7 +34,7 @@ class BrapiUseCaseImplTest {
 
         var result = useCase.searchSymbols(" PETR ", 10);
         assertEquals(1, result.size());
-        assertEquals("PETR4", result.get(0).getSymbol());
+        assertEquals("PETR4", result.get(0).getStock());
 
         assertThrows(BadRequestException.class, () -> useCase.searchSymbols(null, 10));
         assertThrows(BadRequestException.class, () -> useCase.searchSymbols(" ", 10));
@@ -51,7 +51,7 @@ class BrapiUseCaseImplTest {
 
         var result = useCase.listSymbols(0, 999, null, null);
         assertEquals(1, result.size());
-        assertEquals("VALE3", result.get(0).getSymbol());
+        assertEquals("VALE3", result.get(0).getStock());
 
         verify(gateway).list(1, 50, "close", "desc");
     }

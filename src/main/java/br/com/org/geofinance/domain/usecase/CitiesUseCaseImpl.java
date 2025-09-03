@@ -28,7 +28,7 @@ public class CitiesUseCaseImpl implements CitiesUseCase {
     @Override
     public CityInfo resolveByUfAndName(String uf, String name) {
         if (uf == null || uf.isBlank() || name == null || name.isBlank()) {
-            log.error("O valoe do Estado (UF) está inválido");
+            log.error("O valor do Estado (UF) está inválido");
             throw new BadRequestException("Parâmetros uf e name são obrigatórios");
         }
         var list = listMunicipiosByUf(uf);

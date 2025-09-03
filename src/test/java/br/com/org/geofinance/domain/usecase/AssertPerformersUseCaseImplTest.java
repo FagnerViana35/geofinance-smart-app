@@ -29,7 +29,7 @@ class AssertPerformersUseCaseImplTest {
 
     private BrapiQuoteItem item(String stock, double close, double change) {
         return BrapiQuoteItem.builder()
-                .symbol(stock)
+                .stock(stock)
                 .close(close)
                 .change(change)
                 .name(stock+" SA")

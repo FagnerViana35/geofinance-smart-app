@@ -12,7 +12,7 @@ public class MapperAssetPerformance {
             return null;
         }
         return AssetPerformance.builder()
-                .symbol(it.getSymbol())
+                .symbol(it.getStock())
                 .changePct(it.getChange())
                 .changePercent(it.getChange())
                 .close(it.getClose())

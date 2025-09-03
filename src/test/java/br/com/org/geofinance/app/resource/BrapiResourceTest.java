@@ -22,7 +22,7 @@ class BrapiResourceTest {
 
     private BrapiQuoteItem sample(String symbol, String name, Double close) {
         BrapiQuoteItem item = new BrapiQuoteItem();
-        item.setSymbol(symbol);
+        item.setStock(symbol);
         item.setName(name);
         item.setClose(close);
         return item;

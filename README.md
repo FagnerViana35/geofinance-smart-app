@@ -1,6 +1,6 @@
 # geofinance-smart-app
 
-Sistema Quarkus para gerenciar uma watchlist de ativos e integrar dados urbanos do IBGE. Este README técnico documenta o problema de negócio, a arquitetura (com UML simplificado), algoritmos centrais, decisões e trade-offs, como executar localmente e exemplos reais de uso.
+Sistema Quarkus de carteira de investimentos para gerenciar uma watchlist de ativos, integrar dados urbanos do IBGE e analisar dados financeiros com a API BRADI. Este README técnico documenta o problema de negócio, a arquitetura, algoritmos, decisões técnicas, execução local e endpoints.
 
 Sumário
 - Problema de negócio resolvido
@@ -23,6 +23,45 @@ Arquitetura e UML
   - CitiesResource -> CitiesService -> IbgeGateway -> IbgeClient (REST)
   - AssertPerformersUseCase -> BrapiGateway (REST)
   - MapperWatch/MapperAssetPerformance convertem entre DTOs e entidades/modelos externos
+
+Arquitetura Adotada
+- O projeto segue os princípios da Clean Architecture, com separação clara de responsabilidades em camadas concêntricas:
+  - Domínio (Core Business Rules)
+  - Pacote: domain
+  - Responsabilidades:
+  - Regras de negócio (ex: CitiesUseCaseImpl).
+  - Interfaces para integrações externas (ex: BrapiGateway, IbgeGateway).
+  - Princípio: Independente de frameworks e camadas externas.
+- Aplicação (Interface Adapters)
+  - Pacote: app
+  - Responsabilidades:
+  - Endpoints REST (ex: CitiesResource).
+  - DTOs para serialização/deserialização (ex: CityInfo).
+  - Serviços que adaptam dados entre camadas.
+  - Princípio: Converte dados entre domínio e infraestrutura. 
+- Infraestrutura (Frameworks and Databases)
+  - Pacote: infra
+  - Responsabilidades:
+  - Implementações de gateways (ex: BrapiGatewayImpl, IbgeGatewayImpl).
+  - Repositórios para persistência (ex: WatchRepository).
+  - Integrações com APIs externas (ex: BrapiClient).
+  - Princípio: Detalhes técnicos (banco de dados, HTTP clients) isolados. 
+- Cross-Cutting Concerns
+  - Pacote: cross
+  - Responsabilidades:
+  - Mapeadores (ex: MapperAssetPerformance).
+  - Utilitários para validações e formatações.
+  - Princípio: Reutilização de lógica transversal sem acoplamento.
+
+- Benefícios da Arquitetura
+  - Testabilidade: Use cases podem ser testados isoladamente.
+  - Manutenibilidade: Camadas desacopladas facilitam evolução.
+  - Escalabilidade: Nova funcionalidade (ex: API Yahoo Finance) é adicionada sem impactar regras de negócio.
+
+- Inversão de Dependências
+ - Domínio define interfaces (ex: BrapiGateway).
+ - Infraestrutura implementa essas interfaces (ex: BrapiGatewayImpl).
+ - Aplicação usa interfaces do domínio para acoplar-se à infraestrutura.
 
 Algoritmos e lógica de negócio
 - Ranking de ativos (AssertPerformersUseCaseImpl):

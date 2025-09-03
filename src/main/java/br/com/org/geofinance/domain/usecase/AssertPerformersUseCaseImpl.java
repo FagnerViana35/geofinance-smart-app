@@ -41,7 +41,7 @@ public class AssertPerformersUseCaseImpl implements AssertPerformersUseCase{
                     .collect(Collectors.toSet());
             List<BrapiQuoteItem> all = safeList( gateway.list(1, 500, "close", "desc") );
             universe = all.stream()
-                    .filter(it -> it.getSymbol() != null && wanted.contains(it.getSymbol().toUpperCase()))
+                    .filter(it -> it.getStock() != null && wanted.contains(it.getStock().toUpperCase()))
                     .toList();
         }
 

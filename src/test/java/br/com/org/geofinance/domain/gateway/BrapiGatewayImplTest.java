@@ -28,7 +28,7 @@ class BrapiGatewayImplTest {
     private BrapiQuoteListResponse listResp(String... stocks) {
         return BrapiQuoteListResponse.builder()
                 .stocks(java.util.Arrays.stream(stocks)
-                        .map(s -> BrapiQuoteItem.builder().symbol(s).build())
+                        .map(s -> BrapiQuoteItem.builder().stock(s).build())
                         .toList())
                 .build();
     }

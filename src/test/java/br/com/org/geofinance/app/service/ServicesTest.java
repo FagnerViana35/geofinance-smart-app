@@ -44,7 +44,7 @@ class ServicesTest {
     @Test
     @DisplayName("BrapiService delega ao usecase")
     void testBrapiServiceDelegates() {
-        when(brapiUseCase.searchSymbols("PETR", 3)).thenReturn(List.of(BrapiQuoteItem.builder().symbol("PETR4").build()));
+        when(brapiUseCase.searchSymbols("PETR", 3)).thenReturn(List.of(BrapiQuoteItem.builder().stock("PETR4").build()));
         var r1 = brapiService.searchSymbols("PETR", 3);
         assertEquals(1, r1.size());
         verify(brapiUseCase).searchSymbols("PETR", 3);

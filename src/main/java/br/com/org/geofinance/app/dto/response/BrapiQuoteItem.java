@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class BrapiQuoteItem {
-    private String symbol;
+    private String stock;
     private String name;
     private Double close;
     private Double change;
